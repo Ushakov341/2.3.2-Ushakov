@@ -14,6 +14,7 @@ import {
   } from '@mantine/core';
   import { IconMinus, IconPlus, IconTrash, IconShoppingCart } from '@tabler/icons-react';
   import { CartItem } from '../../types/product';
+import React from 'react';
   
   interface CartDrawerProps {
     opened: boolean;
