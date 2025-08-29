@@ -1,0 +1,25 @@
+.card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    height: 100%;
+  }
+  
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+  
+  .quantityButton {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    min-width: 28px;
+  }
+  
+  .addButton {
+    transition: all 0.2s ease;
+  }
+  
+  .addButton:hover {
+    transform: translateY(-1px);
+  }
