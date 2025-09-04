@@ -1,42 +1,32 @@
-import { MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
 import { useEffect, useState } from 'react';
-import { fetchProducts } from './api/products';
-import { CartDrawer } from './components/CartDrawer/CartDrawer';
-import { Header } from './components/Header/Header';
-import { LoadingGrid } from './components/LoadingGrid/LoadingGrid';
-import { ProductGrid } from './components/ProductGrid/ProductGrid';
-import { useCart } from './hooks/useCart';
-import { Product } from './types/product';
-
+import { MantineProvider, AppShell } from '@mantine/core';
+import { Notifications } from '@mantine/notifications';
+import { notifications } from '@mantine/notifications';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
+import { Header } from './components/Header/Header';
+import { ProductList } from './components/ProductList/ProductList';
+import { useCart } from './hooks/useCart';
+import { fetchProducts } from './services/api';
+import { Product } from './types';
 
 function App() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [cartOpened, setCartOpened] = useState(false);
-  
-  const {
-    cartItems,
-    addToCart,
-    removeFromCart,
-    updateCartQuantity,
-    getTotalItems,
-    getTotalPrice,
-    clearCart,
-  } = useCart();
+  const { cart, addToCart, updateQuantity, removeFromCart, clearCart } = useCart();
 
   useEffect(() => {
     const loadProducts = async () => {
       try {
         setLoading(true);
-        const fetchedProducts = await fetchProducts();
-        setProducts(fetchedProducts);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load products. Please try again later.');
+        const data = await fetchProducts();
+        setProducts(data);
+      } catch (error) {
+        notifications.show({
+          title: 'Error',
+          message: 'Failed to load products. Please try again.',
+          color: 'red',
+        });
       } finally {
         setLoading(false);
       }
@@ -45,43 +35,52 @@ function App() {
     loadProducts();
   }, []);
 
-  const handleCartToggle = () => {
-    setCartOpened(!cartOpened);
+  const handleAddToCart = (product: Product, quantity: number) => {
+    addToCart(product, quantity);
+    notifications.show({
+      title: 'Added to cart',
+      message: `${product.title} (${quantity}) added to your cart`,
+      color: 'green',
+    });
   };
 
   return (
-    <MantineProvider>
-      <Notifications position="top-right" />
-      
-      <div style={{ minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+    <MantineProvider
+      theme={{
+        primaryColor: 'green',
+        colors: {
+          green: [
+            '#f0f9f4',
+            '#e6f5ea',
+            '#c7e9d1',
+            '#a8ddb7',
+            '#8bd19e',
+            '#6fc584',
+            '#54b46a',
+            '#4a9960',
+            '#407e56',
+            '#35634c'
+          ]
+        }
+      }}
+    >
+      <Notifications />
+      <AppShell>
         <Header
-          cartItemsCount={getTotalItems()}
-          cartTotal={getTotalPrice()}
-          onCartClick={handleCartToggle}
-        />
-
-        <main>
-          {loading ? (
-            <LoadingGrid />
-          ) : error ? (
-            <div style={{ textAlign: 'center', padding: '2rem' }}>
-              <p>{error}</p>
-            </div>
-          ) : (
-            <ProductGrid products={products} onAddToCart={addToCart} />
-          )}
-        </main>
-
-        <CartDrawer
-          opened={cartOpened}
-          onClose={handleCartToggle}
-          cartItems={cartItems}
-          onUpdateQuantity={updateCartQuantity}
-          onRemoveItem={removeFromCart}
-          totalPrice={getTotalPrice()}
+          cart={cart}
+          onUpdateQuantity={updateQuantity}
+          onRemoveFromCart={removeFromCart}
           onClearCart={clearCart}
         />
-      </div>
+        
+        <AppShell.Main>
+          <ProductList
+            products={products}
+            loading={loading}
+            onAddToCart={handleAddToCart}
+          />
+        </AppShell.Main>
+      </AppShell>
     </MantineProvider>
   );
 }

@@ -1,74 +1,102 @@
-import { useState } from 'react';
-import { CartItem, Product } from '../types/product';
-import { notifications } from '@mantine/notifications';
+import { useState, useCallback } from 'react';
+import { CartItem, CartState, Product } from '../types';
 
 export const useCart = () => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartState>({
+    items: [],
+    totalItems: 0,
+    totalPrice: 0
+  });
 
-  const addToCart = (product: Product, quantity: number) => {
-    setCartItems(prev => {
-      const existingItem = prev.find(item => item.id === product.id);
+  const addToCart = useCallback((product: Product, quantity: number = 1) => {
+    setCart(prevCart => {
+      const existingItemIndex = prevCart.items.findIndex(
+        item => item.product.id === product.id
+      );
+
+      let updatedItems: CartItem[];
       
-      if (existingItem) {
-        return prev.map(item =>
-          item.id === product.id
-            ? { ...item, cartQuantity: item.cartQuantity + quantity }
-            : item
-        );
+      if (existingItemIndex >= 0) {
+        updatedItems = [...prevCart.items];
+        updatedItems[existingItemIndex] = {
+          ...updatedItems[existingItemIndex],
+          quantity: updatedItems[existingItemIndex].quantity + quantity
+        };
       } else {
-        return [...prev, { ...product, cartQuantity: quantity }];
+        updatedItems = [...prevCart.items, { product, quantity }];
       }
+
+      const totalItems = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const totalPrice = updatedItems.reduce(
+        (sum, item) => sum + (item.product.price * item.quantity), 0
+      );
+
+      return {
+        items: updatedItems,
+        totalItems,
+        totalPrice
+      };
     });
+  }, []);
 
-    notifications.show({
-      title: 'Added to cart',
-      message: `${product.name} has been added to your cart`,
-      color: 'green',
+  const removeFromCart = useCallback((productId: number) => {
+    setCart(prevCart => {
+      const updatedItems = prevCart.items.filter(
+        item => item.product.id !== productId
+      );
+
+      const totalItems = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const totalPrice = updatedItems.reduce(
+        (sum, item) => sum + (item.product.price * item.quantity), 0
+      );
+
+      return {
+        items: updatedItems,
+        totalItems,
+        totalPrice
+      };
     });
-  };
+  }, []);
 
-  const removeFromCart = (productId: number) => {
-    setCartItems(prev => prev.filter(item => item.id !== productId));
-  };
-
-  const updateCartQuantity = (productId: number, quantity: number) => {
+  const updateQuantity = useCallback((productId: number, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
     }
-    
-    setCartItems(prev =>
-      prev.map(item =>
-        item.id === productId
-          ? { ...item, cartQuantity: quantity }
+
+    setCart(prevCart => {
+      const updatedItems = prevCart.items.map(item =>
+        item.product.id === productId
+          ? { ...item, quantity }
           : item
-      )
-    );
-  };
+      );
 
-  const getTotalItems = () => {
-    return cartItems.reduce((sum, item) => sum + item.cartQuantity, 0);
-  };
+      const totalItems = updatedItems.reduce((sum, item) => sum + item.quantity, 0);
+      const totalPrice = updatedItems.reduce(
+        (sum, item) => sum + (item.product.price * item.quantity), 0
+      );
 
-  const getTotalPrice = () => {
-    return cartItems.reduce((sum, item) => {
-      const itemPrice = typeof item.price === 'number' ? item.price : parseFloat(item.price) || 0;
-      const itemQuantity = typeof item.cartQuantity === 'number' ? item.cartQuantity : 0;
-      return sum + (itemPrice * itemQuantity);
-    }, 0);
-  };
+      return {
+        items: updatedItems,
+        totalItems,
+        totalPrice
+      };
+    });
+  }, [removeFromCart]);
 
-  const clearCart = () => {
-    setCartItems([]);
-  };
+  const clearCart = useCallback(() => {
+    setCart({
+      items: [],
+      totalItems: 0,
+      totalPrice: 0
+    });
+  }, []);
 
   return {
-    cartItems,
+    cart,
     addToCart,
     removeFromCart,
-    updateCartQuantity,
-    getTotalItems,
-    getTotalPrice,
-    clearCart,
+    updateQuantity,
+    clearCart
   };
 };

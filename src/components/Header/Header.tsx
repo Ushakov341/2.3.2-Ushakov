@@ -1,50 +1,150 @@
-import { ActionIcon, Badge, Button, Group, Text, UnstyledButton } from '@mantine/core';
-import { IconShoppingCart } from '@tabler/icons-react';
-import classes from './Header.module.css';
+import { useState } from 'react';
+import { Container, Group, Text, Badge, ActionIcon, Popover, Stack, Button } from '@mantine/core';
+import { IconShoppingCart, IconMinus, IconPlus, IconTrash } from '@tabler/icons-react';
+import { CartState } from '../../types';
+import styles from './Header.module.css';
 
 interface HeaderProps {
-  cartItemsCount: number;
-  cartTotal: number;
-  onCartClick: () => void;
+  cart: CartState;
+  onUpdateQuantity: (productId: number, quantity: number) => void;
+  onRemoveFromCart: (productId: number) => void;
+  onClearCart: () => void;
 }
 
-export const Header = ({ cartItemsCount, cartTotal, onCartClick }: HeaderProps) => {
+export const Header = ({ cart, onUpdateQuantity, onRemoveFromCart, onClearCart }: HeaderProps) => {
+  const [opened, setOpened] = useState(false);
+
   return (
-    <header className={classes.header}>
-      <div className={classes.container}>
-        <Group justify="space-between" w="100%">
-          <Group>
-            <div className={classes.logo}>
-              <Text size="xl" fw={700} c="green.6">
-                Vegetable
-              </Text>
-              <Badge color="green" variant="filled" size="sm">
-                SHOP
-              </Badge>
-            </div>
+    <header className={styles.header}>
+      <Container size="xl">
+        <Group justify="space-between" h={60}>
+          <Group gap="sm">
+            <Text size="xl" fw={700} c="#54b46a">
+              Vegetable
+            </Text>
+            <Badge size="lg" color="#54b46a" variant="filled">
+              SHOP
+            </Badge>
           </Group>
-          
-          <UnstyledButton onClick={onCartClick} className={classes.cartButton}>
-            <Group gap={8}>
-              <div className={classes.cartIcon}>
-                <ActionIcon size="lg" variant="filled" color="green.6">
-                  <IconShoppingCart size={20} />
-                </ActionIcon>
-                {cartItemsCount > 0 && (
-                  <Badge size="sm" circle className={classes.cartBadge}>
-                    {cartItemsCount}
-                  </Badge>
-                )}
-              </div>
-              <div>
-                <Text size="sm" c="green.6" fw={600}>
-                  Cart ${cartTotal.toFixed(2)}
+
+          <Popover
+            opened={opened}
+            onClose={() => setOpened(false)}
+            width={400}
+            position="bottom-end"
+            withArrow
+            shadow="md"
+          >
+            <Popover.Target>
+              <ActionIcon
+                variant="filled"
+                color="#54b46a"
+                size="xl"
+                radius="md"
+                onClick={() => setOpened(!opened)}
+              >
+                <Group gap={4}>
+                  <IconShoppingCart size={18} />
+                  {cart.totalItems > 0 && (
+                    <Badge size="xs" color="red" variant="filled" circle>
+                      {cart.totalItems}
+                    </Badge>
+                  )}
+                </Group>
+              </ActionIcon>
+            </Popover.Target>
+
+            <Popover.Dropdown p="md">
+              <Text fw={600} mb="md">Cart</Text>
+              
+              {cart.items.length === 0 ? (
+                <Text c="dimmed" ta="center" py="xl">
+                  Your cart is empty
                 </Text>
-              </div>
-            </Group>
-          </UnstyledButton>
+              ) : (
+                <>
+                  <Stack gap="md" mb="md">
+                    {cart.items.map(item => (
+                      <Group key={item.product.id} justify="space-between" wrap="nowrap">
+                        <Group gap="sm" style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ 
+                            width: 40, 
+                            height: 40, 
+                            borderRadius: 4, 
+                            overflow: 'hidden',
+                            flexShrink: 0
+                          }}>
+                            <img
+                              src={item.product.thumbnail}
+                              alt={item.product.title}
+                              style={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover'
+                              }}
+                            />
+                          </div>
+                        <div>
+                          <Text fw={500} size="sm">{item.product.title}</Text>
+                          <Text size="xs" c="dimmed">1 kg</Text>
+                          <Text fw={600} c="#54b46a">₹ {item.product.price}</Text>
+                        </div>
+                        </Group>
+                        
+                        <Group gap="xs" style={{ flexShrink: 0 }}>
+                          <ActionIcon
+                            size="sm"
+                            variant="light"
+                            color="gray"
+                            onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
+                          >
+                            <IconMinus size={12} />
+                          </ActionIcon>
+                          
+                          <Text fw={500} w={20} ta="center">{item.quantity}</Text>
+                          
+                          <ActionIcon
+                            size="sm"
+                            variant="light"
+                            color="gray"
+                            onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
+                          >
+                            <IconPlus size={12} />
+                          </ActionIcon>
+                          
+                          <ActionIcon
+                            size="sm"
+                            variant="light"
+                            color="red"
+                            onClick={() => onRemoveFromCart(item.product.id)}
+                          >
+                            <IconTrash size={12} />
+                          </ActionIcon>
+                        </Group>
+                      </Group>
+                    ))}
+                  </Stack>
+                  
+                  <Group justify="space-between" pt="md" style={{ borderTop: '1px solid #e9ecef' }}>
+                    <Text fw={600}>Total</Text>
+                    <Text fw={700} c="#54b46a">₹ {cart.totalPrice.toFixed(2)}</Text>
+                  </Group>
+                  
+                  <Button
+                    fullWidth
+                    mt="md"
+                    color="red"
+                    variant="light"
+                    onClick={onClearCart}
+                  >
+                    Clear Cart
+                  </Button>
+                </>
+              )}
+            </Popover.Dropdown>
+          </Popover>
         </Group>
-      </div>
+      </Container>
     </header>
   );
 };

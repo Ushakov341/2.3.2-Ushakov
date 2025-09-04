@@ -1,4 +1,4 @@
-import { Product } from '../types/product';
+import type { Product } from '../types/product';
 
 export const fetchProducts = async (): Promise<Product[]> => {
   const response = await fetch('https://res.cloudinary.com/sivadass/raw/upload/v1535817394/json/products.json');

@@ -1,8 +1,8 @@
-import { Button, Card, Group, Image, NumberInput, Text } from '@mantine/core';
-import { IconMinus, IconPlus } from '@tabler/icons-react';
 import { useState } from 'react';
-import { Product } from '../../types/product';
-import classes from './ProductCard.module.css';
+import { Card, Text, Group, ActionIcon, Button, NumberInput } from '@mantine/core';
+import { IconMinus, IconPlus, IconShoppingCart } from '@tabler/icons-react';
+import { Product } from '../../types';
+import styles from './ProductCard.module.css';
 
 interface ProductCardProps {
   product: Product;
@@ -12,100 +12,92 @@ interface ProductCardProps {
 export const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const [quantity, setQuantity] = useState(1);
 
-  const handleQuantityChange = (value: number | string) => {
-    if (value === '' || value === null || value === undefined) {
-      return; // Don't update if value is empty
-    }
+  const handleQuantityChange = (value: string | number) => {
     const newQuantity = typeof value === 'string' ? parseInt(value) : value;
-    if (!isNaN(newQuantity) && newQuantity > 0) {
-      setQuantity(Math.max(1, Math.min(newQuantity, product.availableCount)));
+    if (newQuantity >= 1) {
+      setQuantity(newQuantity);
     }
-  };
-
-  const handleIncrement = () => {
-    setQuantity(prev => Math.min(prev + 1, product.availableCount));
-  };
-
-  const handleDecrement = () => {
-    setQuantity(prev => Math.max(prev - 1, 1));
   };
 
   const handleAddToCart = () => {
     onAddToCart(product, quantity);
+    setQuantity(1);
   };
 
   return (
-    <Card className={classes.card} padding="lg" radius="md" withBorder>
+    <Card
+      shadow="sm"
+      padding="lg"
+      radius="md"
+      withBorder
+      className={styles.productCard}
+    >
       <Card.Section>
-        <Image
-          src={product.imageUrl}
-          height={160}
-          alt={product.name}
-          fit="cover"
-        />
+        <div className={styles.imageContainer}>
+          <img
+            src={product.thumbnail}
+            alt={product.title}
+            className={styles.productImage}
+          />
+        </div>
       </Card.Section>
 
       <Group justify="space-between" mt="md" mb="xs">
-        <Text fw={500} size="sm">
-          {product.name}
-        </Text>
-        <Text size="xs" c="dimmed">
-          {product.quantity}
-        </Text>
+        <Text fw={600} size="lg">{product.title}</Text>
+        <Text size="sm" c="dimmed">1 kg</Text>
       </Group>
 
-      <Text size="xl" fw={700} c="green.6" mb="md">
-        $ {product.price}
+      <Text fw={700} size="xl" c="#54b46a" mb="md">
+        ₹ {product.price}
       </Text>
 
       <Group justify="space-between" mb="md">
-        <Group gap={4}>
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={handleDecrement}
+        <Group gap="xs">
+          <ActionIcon
+            variant="light"
+            color="gray"
+            size="sm"
+            onClick={() => handleQuantityChange(quantity - 1)}
             disabled={quantity <= 1}
-            className={classes.quantityButton}
           >
-            <IconMinus size={12} />
-          </Button>
+            <IconMinus size={14} />
+          </ActionIcon>
           
           <NumberInput
             value={quantity}
             onChange={handleQuantityChange}
             min={1}
-            max={product.availableCount}
-            size="xs"
+            max={product.stock}
+            size="sm"
             w={60}
-            allowDecimal={false}
-            allowNegative={false}
-            clampBehavior="strict"
+            hideControls
             styles={{
               input: {
                 textAlign: 'center',
-                padding: '4px',
+                padding: '4px 8px'
               }
             }}
           />
           
-          <Button
-            variant="outline"
-            size="xs"
-            onClick={handleIncrement}
-            disabled={quantity >= product.availableCount}
-            className={classes.quantityButton}
+          <ActionIcon
+            variant="light"
+            color="gray"
+            size="sm"
+            onClick={() => handleQuantityChange(quantity + 1)}
+            disabled={quantity >= product.stock}
           >
-            <IconPlus size={12} />
-          </Button>
+            <IconPlus size={14} />
+          </ActionIcon>
         </Group>
       </Group>
 
       <Button
-        variant="filled"
-        color="green"
         fullWidth
+        leftSection={<IconShoppingCart size={16} />}
         onClick={handleAddToCart}
-        className={classes.addButton}
+        color="#54b46a"
+        variant="filled"
+        className={styles.addToCartBtn}
       >
         Add to cart
       </Button>
